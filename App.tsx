@@ -14,6 +14,9 @@ import * as AdherenceService from './services/adherence';
 import { ScheduleManager } from './services/schedule';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'nativewind';
+import * as Linking from 'expo-linking';
+import { ScannerModal } from './components/ScannerModal';
+import { parseQRData } from './utils/qr';
 import './global.css';
 
 export default function App() {
@@ -24,6 +27,10 @@ export default function App() {
     const [editingMedication, setEditingMedication] = useState<Medication | null>(null);
     const [selectedDrugForInfo, setSelectedDrugForInfo] = useState<string | null>(null);
 
+    // Scanner & Deep Link State
+    const [showScanner, setShowScanner] = useState(false);
+    const [initialMedicationData, setInitialMedicationData] = useState<Partial<Medication> | undefined>(undefined);
+
     const [isLoading, setIsLoading] = useState(true);
     const [timezoneChanged, setTimezoneChanged] = useState(false);
     const [statsRange, setStatsRange] = useState<number>(30);
@@ -32,6 +39,25 @@ export default function App() {
     // NativeWind / Tailwind Dark Mode
     const { colorScheme, toggleColorScheme } = useColorScheme();
     const isDarkMode = colorScheme === 'dark';
+
+    // Deep Link Listener
+    useEffect(() => {
+        const handleDeepLink = ({ url }: { url: string }) => {
+            const data = parseQRData(url);
+            if (data) {
+                setInitialMedicationData(data);
+                setIsAddModalOpen(true);
+            }
+        };
+
+        const sub = Linking.addEventListener('url', handleDeepLink);
+
+        Linking.getInitialURL().then(url => {
+            if (url) handleDeepLink({ url });
+        });
+
+        return () => sub.remove();
+    }, []);
 
     useEffect(() => {
         const init = async () => {
@@ -72,38 +98,20 @@ export default function App() {
         }
     }, [medications, takenLog, statsRange, isLoading]);
 
-    // Monitor for alarms (Every 30 seconds)
-    // Monitor for alarms (Every 5 seconds for continuous checking)
+    // Monitor for alarms (Every 30 seconds -> 5 for debug)
     useEffect(() => {
         const interval = setInterval(() => {
             const now = new Date();
-            // console.log("[In-App Monitor] Checking schedules at", now.toLocaleTimeString()); // Optional debug log
-
             medications.forEach(med => {
                 const takenCount = takenLog[med.id] || 0;
                 const next = ScheduleManager.getNextOccurrence(med, takenCount);
                 if (!next) return;
-
                 const timeDiff = next.getTime() - now.getTime();
-
-                // If timeDiff is effectively zero (due now) or slightly past (missed by < 5s)
-                // We check if we already notified? 
-                // Using the 'lastNotified' field would be ideal to avoid duplicates.
-                // For now, we assume this loop runs alongside OS notifications. 
-                // Only trigger IN-APP sound/alert if in foreground.
-
-                // Window: due within last 5 seconds.
                 if (timeDiff <= 0 && timeDiff > -5000) {
-                    console.log(`[In-App Monitor] Medication ${med.id} is due now!`);
-                    // We could also manually fire a notification if one hasn't appeared, 
-                    // but scheduleNotificationAsync covers it.
-                    // Let's ensure the user hears it if the app is open.
                     NotificationService.playAlarmSound();
                 }
-                    console.log(`Time difference is ${timeDiff}`)
             });
-
-        }, 30000);
+        }, 30000); // 30s check loop
         return () => clearInterval(interval);
     }, [medications, takenLog]);
 
@@ -112,7 +120,6 @@ export default function App() {
         const currentCount = takenLog[id] || 0;
         const newCount = currentCount + 1;
         const newLog = { ...takenLog, [id]: newCount };
-
         setTakenLog(newLog);
 
         const today = new Date().toISOString().split('T')[0];
@@ -171,6 +178,7 @@ export default function App() {
         }
 
         setEditingMedication(null);
+        setInitialMedicationData(undefined);
     };
 
     const handleDeleteMedication = async (id: string) => {
@@ -183,6 +191,12 @@ export default function App() {
         setTakenLog(newLog);
         const today = new Date().toISOString().split('T')[0];
         await AsyncStorage.setItem(`pillguard_log_${today}`, JSON.stringify(newLog));
+    };
+
+    const handleScanResult = (data: any) => {
+        setInitialMedicationData(data);
+        setShowScanner(false);
+        setTimeout(() => setIsAddModalOpen(true), 500);
     };
 
     const renderView = () => {
@@ -199,6 +213,7 @@ export default function App() {
                         adherenceStats={adherenceStats}
                         setStatsRange={setStatsRange}
                         statsRange={statsRange}
+                        onScanPress={() => setShowScanner(true)}
                     />
                 );
             case AppView.MEDICATIONS:
@@ -207,10 +222,12 @@ export default function App() {
                         medications={medications}
                         onAdd={() => {
                             setEditingMedication(null);
+                            setInitialMedicationData(undefined);
                             setIsAddModalOpen(true);
                         }}
                         onEdit={(med) => {
                             setEditingMedication(med);
+                            setInitialMedicationData(undefined);
                             setIsAddModalOpen(true);
                         }}
                         onDelete={handleDeleteMedication}
@@ -231,6 +248,9 @@ export default function App() {
         );
     }
 
+    // Determine initial data for modal: either edit data or scanned data
+    const modalInitialData = editingMedication || initialMedicationData;
+
     return (
         <Layout
             currentView={currentView}
@@ -239,22 +259,32 @@ export default function App() {
             toggleDarkMode={toggleColorScheme}
         >
             {renderView()}
+
             {isAddModalOpen && (
                 <AddMedicationModal
-                    initialData={editingMedication}
+                    visible={isAddModalOpen}
+                    initialData={modalInitialData as any}
                     onClose={() => {
                         setIsAddModalOpen(false);
                         setEditingMedication(null);
+                        setInitialMedicationData(undefined);
                     }}
                     onSave={handleSaveMedication}
                 />
             )}
+
             {selectedDrugForInfo && (
                 <DrugInfoModal
                     drugName={selectedDrugForInfo}
                     onClose={() => setSelectedDrugForInfo(null)}
                 />
             )}
+
+            <ScannerModal
+                visible={showScanner}
+                onClose={() => setShowScanner(false)}
+                onScan={handleScanResult}
+            />
         </Layout>
     );
 }

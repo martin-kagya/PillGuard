@@ -3,6 +3,7 @@ import { View, Text, Modal, TextInput, TouchableOpacity, ScrollView, Platform, K
 import { Medication, Frequency } from '../types';
 import * as RxNavService from '../services/rxnav';
 import { ScheduleManager } from '../services/schedule';
+import { CalendarService } from '../services/calendar';
 import { FontAwesome5 } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
@@ -41,13 +42,13 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ initialD
     useEffect(() => {
         if (initialData) {
             setStep(2);
-            setName(initialData.name);
+            setName(initialData.name || '');
             setRxNormName(initialData.rxNormName || '');
-            setDosage(initialData.dosage);
-            setFrequency(initialData.frequency);
-            setStock(initialData.stock.toString());
-            setThreshold(initialData.refillThreshold.toString());
-            setColor(initialData.color);
+            setDosage(initialData.dosage || '');
+            setFrequency(initialData.frequency || Frequency.DAILY);
+            setStock(initialData.stock ? initialData.stock.toString() : '30');
+            setThreshold(initialData.refillThreshold ? initialData.refillThreshold.toString() : '7');
+            setColor(initialData.color || 'bg-blue-500');
             setNotes(initialData.notes || '');
 
             if (initialData.frequency === Frequency.EVERY_X_HOURS && initialData.intervalHours) {
@@ -105,7 +106,7 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ initialD
         setStep(2);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         let timesArray = [time];
         if (frequency === Frequency.TWICE_DAILY) {
             timesArray = [time, secondTime].sort();
@@ -132,6 +133,9 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ initialD
             medData.times = undefined;
             medData.time = time;
         }
+
+        // Sync to Device Calendar
+        await CalendarService.syncMedication(medData as Medication);
 
         onSave(medData);
         onClose();

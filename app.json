@@ -10,7 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kagya.pillguard"
+      "bundleIdentifier": "com.kagya.pillguard",
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "PillGuard needs calendar access to schedule your medication reminders.",
+        "NSRemindersUsageDescription": "PillGuard needs reminders access to help you track your medications.",
+        "NSCameraUsageDescription": "PillGuard needs camera access to scan medication QR codes."
+      }
     },
     "android": {
       "adaptiveIcon": {

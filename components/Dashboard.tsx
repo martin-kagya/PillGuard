@@ -22,6 +22,7 @@ interface DashboardProps {
     adherenceStats: any; // Passed from parent to avoid async mess here
     setStatsRange: (days: number) => void;
     statsRange: number;
+    onScanPress: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -33,7 +34,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     timezoneChanged,
     adherenceStats,
     setStatsRange,
-    statsRange
+    statsRange,
+    onScanPress
 }) => {
 
     const isMorning = (date: Date) => date.getHours() < 12;
@@ -67,6 +69,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </View>
                 </View>
             )}
+
+            {/* Quick Actions - Scan Button (Moved to top) */}
+            <View className="mb-6 flex-row">
+                <TouchableOpacity
+                    onPress={onScanPress}
+                    className="flex-1 bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 p-4 rounded-xl flex-row items-center justify-center shadow-sm"
+                >
+                    <FontAwesome5 name="qrcode" size={20} color="#3b82f6" style={{ marginRight: 10 }} />
+                    <Text className="font-bold text-slate-700 dark:text-white">Scan Pill Bottle</Text>
+                </TouchableOpacity>
+            </View>
 
             {/* Refill Alerts */}
             {lowStockMeds.length > 0 && (
