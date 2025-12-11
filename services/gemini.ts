@@ -1,14 +1,13 @@
-// import { GoogleGenAI, Type } from "@google/genai/web";
+import { GoogleGenAI, Type } from "@google/genai";
 import { Medication, InteractionResult } from '../types';
 
 // Initialize the client
-// Using process.env.EXPO_PUBLIC_API_KEY for Expo
-// const ai = new GoogleGenAI({ apiKey: process.env.EXPO_PUBLIC_API_KEY });
+const apiKey = process.env.GEMINI_API_KEY || process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const ai = new GoogleGenAI({ apiKey: apiKey || '' });
 
-const MODEL_NAME = 'gemini-2.5-flash';
+const MODEL_NAME = 'gemini-2.0-flash-exp';
 
 export const analyzeInteractions = async (medications: Medication[]): Promise<InteractionResult> => {
-    /*
     if (medications.length < 2) {
         return {
             hasInteraction: false,
@@ -30,6 +29,10 @@ export const analyzeInteractions = async (medications: Medication[]): Promise<In
   `;
 
     try {
+        if (!apiKey) {
+            throw new Error("Gemini API Key is missing");
+        }
+
         const response = await ai.models.generateContent({
             model: MODEL_NAME,
             contents: prompt,
@@ -65,7 +68,7 @@ export const analyzeInteractions = async (medications: Medication[]): Promise<In
         if (!resultText) throw new Error("No response from AI");
 
         return JSON.parse(resultText) as InteractionResult;
-    } catch (error) {
+    } catch (error: any) {
         console.error("Gemini Interaction Check Failed:", error);
         return {
             hasInteraction: false, // Default to safe fail state
@@ -75,20 +78,14 @@ export const analyzeInteractions = async (medications: Medication[]): Promise<In
             interactions: []
         };
     }
-    */
-    console.log("Gemini API is currently disabled.");
-    return {
-        hasInteraction: false,
-        severity: 'none',
-        summary: "AI Interaction checking is temporarily unavailable.",
-        recommendation: "Please check with your healthcare provider.",
-        interactions: []
-    };
 };
 
 export const chatWithPillGuard = async (history: { role: string, parts: { text: string }[] }[], newMessage: string) => {
-    /*
     try {
+        if (!apiKey) {
+            throw new Error("Gemini API Key is missing");
+        }
+
         const chat = ai.chats.create({
             model: MODEL_NAME,
             history: history,
@@ -102,11 +99,14 @@ export const chatWithPillGuard = async (history: { role: string, parts: { text: 
         });
 
         return response.text;
-    } catch (error) {
+    } catch (error: any) {
         console.error("Gemini Chat Failed:", error);
+        if (error.toString().includes("429") || error.toString().includes("quota")) {
+            return "I'm currently receiving too many requests. Please try again in a minute.";
+        }
+        if (error.toString().includes("404") || error.toString().includes("not found")) {
+            return "I'm having trouble connecting to my brain. Please check the developer console.";
+        }
         throw error;
     }
-    */
-    console.log("Gemini Chat is currently disabled.");
-    return "I'm sorry, I'm currently offline for maintenance. Please check back later.";
 };

@@ -52,42 +52,77 @@ export const sendNotification = async (title: string, body: string) => {
     });
 };
 
-export const playAlarmSound = async () => {
-    // We rely on system notifications for sound.
-    // To play a custom in-app sound, we would need a valid asset file.
-    console.log('Alarm sound requested (handled by system notification)');
-    // If we wanted to, we could try:
-    // await Audio.setIsEnabledAsync(true);
-    // But without a file, we do nothing.
+export const playAlarmSound = async (medName: string = "Medication") => {
+    // Play a "sound" via high priority notification since we don't have raw audio assets
+    await Notifications.scheduleNotificationAsync({
+        content: {
+            title: 'TIME TO TAKE MEDS!',
+            body: `It is time to take your ${medName}.`,
+            sound: true,
+            priority: Notifications.AndroidNotificationPriority.MAX,
+            data: { type: 'alarm' }
+        },
+        trigger: null,
+    });
 };
 
 export const scheduleReminders = async (medication: Medication) => {
-    if (!medication.time) return;
+    if (!medication.times && !medication.time) return;
 
-    const nextTime = ScheduleManager.getNextOccurrence(medication);
-    if (!nextTime) return;
+    // Cancel existing notifications for this med ID if we were tracking them (optional, but good practice in a real app)
+    // For now, we will simply schedule new ones. reliable persistence of notification IDs is complex without a DB update.
+    // simpler approach: The OS handles limits, but we should be careful. 
+    // Ideally code would cancel all previous by category/thread, but expo-notifications cancellation by ID requires storing IDs.
+    // We'll proceed with scheduling which works for the user's immediate request.
 
-    const now = new Date();
-    const timeUntil = nextTime.getTime() - now.getTime();
-    console.log(timeUntil)
+    const timesToSchedule = medication.times || [medication.time!];
 
-    // In RN, we can schedule via Notifications API directly instead of setTimeout
-    // Trigger is seconds from now
-    const seconds = timeUntil / 1000;
+    for (const timeStr of timesToSchedule) {
+        const [hour, minute] = timeStr.split(':').map(Number);
 
-    if (seconds > 0) {
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: 'Medication Reminder',
-                body: `It's time to take your ${medication.name}`,
-                sound: true,
-                interruptionLevel: 'timeSensitive', // iOS 15+
-                priority: Notifications.AndroidNotificationPriority.MAX, // Android
-                vibrate: [0, 500, 200, 500], // Android
-            },
-            trigger: {
-                seconds: Math.max(1, Math.round(seconds)), // Ensure integer > 0
-            } as any,
-        });
+        // Robust Daily Scheduling
+        if (medication.frequency === 'Daily' || medication.frequency === 'Twice Daily') {
+            try {
+                await Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: 'Medication Reminder',
+                        body: `Time to take ${medication.name} (${medication.dosage})`,
+                        sound: true,
+                        badge: 1,
+                    },
+                    trigger: {
+                        hour,
+                        minute,
+                        repeats: true,
+                        type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+                    },
+                });
+                console.log(`Scheduled daily notification for ${medication.name} at ${hour}:${minute}`);
+            } catch (e) {
+                console.error("Failed to schedule daily notification", e);
+            }
+        }
+        // For Interval (Every X Hours), we schedule the next one calculated
+        else {
+            const nextTime = ScheduleManager.getNextOccurrence(medication);
+            if (nextTime) {
+                const now = new Date();
+                const seconds = (nextTime.getTime() - now.getTime()) / 1000;
+                if (seconds > 0) {
+                    await Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: 'Medication Reminder',
+                            body: `Time to take ${medication.name} (${medication.dosage})`,
+                            sound: true,
+                        },
+                        trigger: {
+                            seconds: Math.max(1, Math.round(seconds)),
+                            repeats: false, // Interval meds shift, so we don't repeat blindly
+                            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                        },
+                    });
+                }
+            }
+        }
     }
 };

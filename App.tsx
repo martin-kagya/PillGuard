@@ -108,7 +108,7 @@ export default function App() {
                 if (!next) return;
                 const timeDiff = next.getTime() - now.getTime();
                 if (timeDiff <= 0 && timeDiff > -5000) {
-                    NotificationService.playAlarmSound();
+                    NotificationService.playAlarmSound(med.name);
                 }
             });
         }, 30000); // 30s check loop
@@ -176,6 +176,11 @@ export default function App() {
             const target = editingMedication ? updatedMeds.find(m => m.id === editingMedication.id) : updatedMeds[updatedMeds.length - 1];
             if (target) NotificationService.scheduleReminders(target);
         }
+
+        // Notify user of success (especially important for scan flows)
+        const successTitle = editingMedication ? 'Medication Updated' : 'Medication Added';
+        const successBody = `${medData.name} has been successfully saved to your schedule.`;
+        NotificationService.sendNotification(successTitle, successBody);
 
         setEditingMedication(null);
         setInitialMedicationData(undefined);

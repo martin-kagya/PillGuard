@@ -9,12 +9,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 
 interface AddMedicationModalProps {
+    visible: boolean;
     initialData?: Medication | null;
     onClose: () => void;
     onSave: (med: Omit<Medication, 'id'>) => void;
 }
 
-export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ initialData, onClose, onSave }) => {
+export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ visible, initialData, onClose, onSave }) => {
     const [step, setStep] = useState(1);
     const [query, setQuery] = useState('');
     const [searchResults, setSearchResults] = useState<RxNavService.RxNavResult[]>([]);
@@ -169,7 +170,7 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ initialD
     };
 
     return (
-        <Modal animationType="slide" transparent={true} visible={true} onRequestClose={onClose}>
+        <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
                 <View className="flex-1 bg-slate-900/50 justify-center p-4">
                     <View className="bg-white dark:bg-slate-800 rounded-xl w-full max-h-[90%] flex-col shadow-2xl overflow-hidden">

@@ -3,9 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Medication, Frequency } from '../types';
 import { ScheduleManager } from '../services/schedule';
 import { FontAwesome5 } from '@expo/vector-icons';
-import clsx from 'clsx'; // Assuming standard React setup, but for RN + NativeWind, standard CSS classes work.
-// I'll stick to direct class strings or interpolation since clsx needs install.
-// NativeWind allows `className`.
+
 
 interface MedicationCardProps {
     medication: Medication;
