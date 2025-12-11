@@ -1,15 +1,16 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "PillGuard",
+    "slug": "pillguard",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "pillguard",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kagya.pillguard"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,6 +19,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "package": "com.kagya.pillguard",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
