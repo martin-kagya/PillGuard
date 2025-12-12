@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DrugForm } from '../types';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -42,10 +43,11 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ visible, onClose, on
     const handleSimulateScan = () => {
         // Mock Data
         const mockData = {
-            name: "Lisinopril",
-            dosage: "10mg",
+            name: "Amoxicillin (Suspension)",
+            dosage: "5ml",
+            form: "LIQUID",
             frequency: "daily",
-            notes: "Simulated Scan Result"
+            notes: "Simulated Scan Result - Liquid Form"
         };
         onScan(mockData);
         onClose();

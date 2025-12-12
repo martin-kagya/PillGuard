@@ -6,11 +6,22 @@ export enum Frequency {
     EVERY_X_HOURS = 'Every X Hours'
 }
 
+export enum DrugForm {
+    TABLET = 'Tablet',
+    CAPSULE = 'Capsule',
+    LIQUID = 'Liquid',
+    INJECTION = 'Injection',
+    CREAM = 'Cream',
+    PATCH = 'Patch',
+    OTHER = 'Other'
+}
+
 export interface Medication {
     id: string;
     name: string; // The display name or nickname
     rxNormName?: string; // Canonical name from RxNav
     rxCui?: string; // RxNorm Concept Unique Identifier
+    form?: DrugForm; // Physical form of the medication
     dosage: string;
     frequency: Frequency;
     time?: string; // Legacy/Primary start time (HH:mm)
@@ -35,6 +46,7 @@ export interface InteractionDetail {
 
 export interface InteractionResult {
     hasInteraction: boolean;
+    status: 'Safe' | 'Risky' | 'Deadly';
     severity: 'low' | 'moderate' | 'high' | 'none'; // Overall severity
     summary: string; // General summary
     recommendation: string;

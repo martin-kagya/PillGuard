@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
-import { Medication, Frequency } from '../types';
+import { Medication, Frequency, DrugForm } from '../types';
 import * as RxNavService from '../services/rxnav';
 import { ScheduleManager } from '../services/schedule';
 import { CalendarService } from '../services/calendar';
@@ -24,6 +24,7 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ visible,
     // Form State
     const [name, setName] = useState('');
     const [rxNormName, setRxNormName] = useState('');
+    const [form, setForm] = useState<DrugForm>(DrugForm.TABLET);
     const [dosage, setDosage] = useState('');
     const [frequency, setFrequency] = useState<Frequency>(Frequency.DAILY);
     const [intervalHours, setIntervalHours] = useState<string>('6');
@@ -45,6 +46,7 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ visible,
             setStep(2);
             setName(initialData.name || '');
             setRxNormName(initialData.rxNormName || '');
+            setForm(initialData.form || DrugForm.TABLET);
             setDosage(initialData.dosage || '');
             setFrequency(initialData.frequency || Frequency.DAILY);
             setStock(initialData.stock ? initialData.stock.toString() : '30');
@@ -68,6 +70,7 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ visible,
             setQuery('');
             setName('');
             setRxNormName('');
+            setForm(DrugForm.TABLET);
             setDosage('');
             setFrequency(Frequency.DAILY);
             setTime('09:00');
@@ -116,6 +119,7 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ visible,
         const medData: Omit<Medication, 'id'> = {
             name,
             rxNormName,
+            form,
             dosage,
             frequency,
             time: timesArray[0],
@@ -266,11 +270,36 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ visible,
                                     </View>
                                 </View>
 
+
+                                {/* Form */}
+                                <View className="mb-4">
+                                    <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Form</Text>
+                                    <View className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg">
+                                        <Picker
+                                            selectedValue={form}
+                                            onValueChange={(itemValue) => {
+                                                const newForm = itemValue as DrugForm;
+                                                setForm(newForm);
+                                                if (newForm === DrugForm.LIQUID || newForm === DrugForm.INJECTION) {
+                                                    if (stock === '30') setStock('0');
+                                                }
+                                            }}
+                                            style={{ color: '#000' }}
+                                        >
+                                            {Object.values(DrugForm).map(f => <Picker.Item key={f} label={f} value={f} />)}
+                                        </Picker>
+                                    </View>
+                                </View>
+
                                 <View className="mb-4">
                                     <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Dosage</Text>
                                     <TextInput
                                         className="w-full p-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-white"
-                                        placeholder="e.g. 10mg"
+                                        placeholder={
+                                            form === DrugForm.LIQUID ? "e.g. 5ml" :
+                                                form === DrugForm.INJECTION ? "e.g. 10 units" :
+                                                    "e.g. 10mg"
+                                        }
                                         value={dosage}
                                         onChangeText={setDosage}
                                     />
@@ -353,7 +382,11 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ visible,
                                     <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">Inventory Tracking</Text>
                                     <View className="flex-row gap-4">
                                         <View className="flex-1">
-                                            <Text className="text-xs text-slate-500 mb-1">Current Stock</Text>
+                                            <Text className="text-xs text-slate-500 mb-1">
+                                                {form === DrugForm.LIQUID ? "Current (ml)" :
+                                                    form === DrugForm.INJECTION ? "Current (units)" :
+                                                        "Current Stock"}
+                                            </Text>
                                             <TextInput
                                                 keyboardType="numeric"
                                                 className="w-full p-2 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-center font-bold text-slate-800 dark:text-white"
@@ -401,7 +434,7 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ visible,
 
                     </View>
                 </View>
-            </KeyboardAvoidingView>
-        </Modal>
+            </KeyboardAvoidingView >
+        </Modal >
     );
 };

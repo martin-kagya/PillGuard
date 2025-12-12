@@ -1,4 +1,4 @@
-import { Medication, Frequency } from '../types';
+import { Medication, Frequency, DrugForm } from '../types';
 
 export const getDailyUsage = (frequency: Frequency): number => {
     switch (frequency) {
@@ -26,7 +26,39 @@ export const getPredictedRefillDate = (stock: number, frequency: Frequency): Dat
 };
 
 export const decrementStock = (medication: Medication): number => {
-    // Basic logic: assume 1 unit per dose event. 
-    // In a complex app, we'd parse the dosage string (e.g. "2 tablets")
-    return Math.max(0, medication.stock - 1);
+    // Default deduction
+    let deduction = 1;
+
+    try {
+        const dosage = medication.dosage?.toLowerCase() || '';
+        const form = medication.form || DrugForm.TABLET;
+
+        // Helper to extract first number
+        const extractNumber = (str: string) => {
+            const match = str.match(/(\d+(\.\d+)?)/);
+            return match ? parseFloat(match[0]) : null;
+        };
+
+        if (form === DrugForm.LIQUID || form === DrugForm.INJECTION || form === DrugForm.CREAM) {
+            // For volume/unit based forms, we trust the number in the dosage is the amount to take
+            // e.g. "5ml" -> 5, "10 units" -> 10
+            const amount = extractNumber(dosage);
+            if (amount !== null) {
+                deduction = amount;
+            }
+        } else if (form === DrugForm.TABLET || form === DrugForm.CAPSULE) {
+            // For pills, we ONLY deduct > 1 if the dosage explicitly mentions "tablets", "capsules", "pills" etc.
+            // We do NOT want to deduct "500" from "500mg".
+            if (dosage.includes('tablet') || dosage.includes('capsule') || dosage.includes('pill')) {
+                const amount = extractNumber(dosage);
+                if (amount !== null) {
+                    deduction = amount;
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Error parsing dosage for stock decrement", e);
+    }
+
+    return Math.max(0, medication.stock - deduction);
 };

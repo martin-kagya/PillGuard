@@ -1,6 +1,9 @@
 import { Medication, Frequency } from '../types';
+import { CalendarService } from './calendar';
 
 export class ScheduleManager {
+    static CalendarService = CalendarService;
+
     /**
      * Returns the user's current IANA timezone (e.g., "America/New_York").
      */
@@ -8,6 +11,7 @@ export class ScheduleManager {
         return Intl.DateTimeFormat().resolvedOptions().timeZone;
     }
 
+    // This method is effectively "private" to the ScheduleManager object
     private static getZoneOffset(targetZone: string): number {
         if (targetZone === this.getCurrentTimezone()) return 0;
 

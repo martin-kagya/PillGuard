@@ -1,3 +1,4 @@
+import { DrugForm } from '../types';
 
 export const parseQRData = (urlOrData: string): any => {
     try {
@@ -37,6 +38,23 @@ export const parseQRData = (urlOrData: string): any => {
 
         // Basic Validation
         if (!data.name) throw new Error("Missing medication name");
+
+        // Validate Form
+        if (data.form) {
+            const validForms = Object.values(DrugForm);
+            // Case-insensitive check
+            const normalizedForm = data.form.toUpperCase();
+            if ((validForms as string[]).includes(normalizedForm)) {
+                data.form = normalizedForm;
+            } else {
+                // Invalid form provided, default to Tablet
+                console.warn(`Invalid DrugForm '${data.form}' in QR code. Defaulting to TABLET.`);
+                data.form = DrugForm.TABLET;
+            }
+        } else {
+            // Missing form, default to Tablet
+            data.form = DrugForm.TABLET;
+        }
 
         return data;
     } catch (e) {

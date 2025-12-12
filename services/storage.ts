@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Medication } from '../types';
+import { Medication, DrugForm } from '../types';
 
 const STORAGE_KEY = 'pillguard_medications_v1';
 
@@ -33,6 +33,7 @@ export const seedInitialData = async (): Promise<Medication[]> => {
             id: '1',
             name: 'Lisinopril',
             rxNormName: 'Lisinopril',
+            form: DrugForm.TABLET,
             dosage: '10mg',
             frequency: 'Daily' as any,
             time: '08:00',
@@ -46,6 +47,7 @@ export const seedInitialData = async (): Promise<Medication[]> => {
             id: '2',
             name: 'Metformin',
             rxNormName: 'Metformin',
+            form: DrugForm.TABLET,
             dosage: '500mg',
             frequency: 'Twice Daily' as any,
             time: '08:00',
@@ -60,6 +62,7 @@ export const seedInitialData = async (): Promise<Medication[]> => {
             id: '3',
             name: 'Atorvastatin',
             rxNormName: 'Atorvastatin',
+            form: DrugForm.TABLET,
             dosage: '20mg',
             frequency: 'Daily' as any,
             time: '20:00',
@@ -68,6 +71,20 @@ export const seedInitialData = async (): Promise<Medication[]> => {
             color: 'bg-purple-500',
             stock: 30,
             refillThreshold: 7
+        },
+        {
+            id: '4',
+            name: 'Insulin Glargine',
+            rxNormName: 'Insulin Glargine',
+            form: DrugForm.INJECTION,
+            dosage: '10 units',
+            frequency: 'Daily' as any,
+            time: '22:00',
+            times: ['22:00'],
+            timezone: defaultTz,
+            color: 'bg-red-500',
+            stock: 100,
+            refillThreshold: 20
         }
     ];
     await saveMedications(seeds);

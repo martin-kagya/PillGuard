@@ -187,6 +187,11 @@ export default function App() {
     };
 
     const handleDeleteMedication = async (id: string) => {
+        const medToDelete = medications.find(m => m.id === id);
+        if (medToDelete) {
+            await ScheduleManager.CalendarService.deleteMedicationEvents(medToDelete);
+        }
+
         const updatedMeds = medications.filter(m => m.id !== id);
         setMedications(updatedMeds);
         await StorageService.saveMedications(updatedMeds);
@@ -196,6 +201,12 @@ export default function App() {
         setTakenLog(newLog);
         const today = new Date().toISOString().split('T')[0];
         await AsyncStorage.setItem(`pillguard_log_${today}`, JSON.stringify(newLog));
+
+        // Refresh Notifications: Cancel all and re-schedule remaining
+        await NotificationService.cancelAllNotifications();
+        for (const med of updatedMeds) {
+            await NotificationService.scheduleReminders(med);
+        }
     };
 
     const handleScanResult = (data: any) => {

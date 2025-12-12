@@ -32,7 +32,7 @@ export const calculateAdherenceStats = async (medications: Medication[], daysToL
             if (med.frequency !== 'Weekly') {
                 totalScheduled += dosesPerDay;
                 if (log[med.id]) {
-                    totalTaken += Math.min(log[med.id], dosesPerDay);
+                    totalTaken += Math.min(log[med.id] || 0, dosesPerDay);
                 }
             }
         });

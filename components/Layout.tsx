@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppView } from '../types';
 import { FontAwesome5 } from '@expo/vector-icons';
 

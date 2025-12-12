@@ -25,9 +25,7 @@ export const CalendarService = {
 
         // Priority 3: Any CalDAV/Exchange (Google/Outlook) - usually writable
         const writable = sources.find(s =>
-            (s.type === Calendar.SourceType.CALDAV || s.type === Calendar.SourceType.EXCHANGE) &&
-            s.type !== Calendar.SourceType.SUBSCRIBED &&
-            s.type !== Calendar.SourceType.BIRTHDAYS
+            (s.type === Calendar.SourceType.CALDAV || s.type === Calendar.SourceType.EXCHANGE)
         );
         if (writable) return writable;
 
@@ -110,6 +108,39 @@ export const CalendarService = {
 
         } catch (e) {
             console.warn("Calendar Sync Failed", e);
+        }
+    },
+
+    async deleteMedicationEvents(medication: Medication) {
+        try {
+            const hasPermission = await this.requestPermissions();
+            if (!hasPermission) return;
+
+            const calendarId = await this.createCalendar();
+            const now = new Date();
+            const oneYearLater = new Date();
+            oneYearLater.setFullYear(now.getFullYear() + 1);
+
+            const events = await Calendar.getEventsAsync(
+                [calendarId],
+                now,
+                oneYearLater
+            );
+
+            // Filter for events that look like ours for this specific medication
+            // Match title format: "Take ${medication.name} (${medication.dosage})"
+            const targetTitle = `Take ${medication.name}`;
+
+            const eventsToDelete = events.filter(e => e.title.includes(targetTitle));
+
+            if (eventsToDelete.length > 0) {
+                console.log(`[Calendar] Deleting ${eventsToDelete.length} events for ${medication.name}`);
+                for (const event of eventsToDelete) {
+                    await Calendar.deleteEventAsync(event.id);
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to delete calendar events", e);
         }
     }
 };

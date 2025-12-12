@@ -126,3 +126,7 @@ export const scheduleReminders = async (medication: Medication) => {
         }
     }
 };
+
+export const cancelAllNotifications = async () => {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+};
